@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Data.SqlClient;
 
 class Program
@@ -77,9 +77,37 @@ class Program
                 Console.WriteLine("Buyer name cannot be empty");
                 return;
             }
-            
+            Console.WriteLine("Enter the product name: ");
+            string productName = Console.ReadLine();
+            if (string.IsNullOrEmpty(productName))
+            {
+                Console.WriteLine("Product name cannot be empty");
+                return;
+            }
 
-            string insertBuyerQuery = $"INSERT INTO Buyers (Name) VALUES ('{buyerName}')";
+            string getProductIdQuery = $"SELECT Id FROM Products WHERE Name = '{productName}'";
+            int productId = -1;
+
+            using (SqlConnection connection = new(connectionString))
+            {
+                connection.Open();
+                connection.ChangeDatabase(databaseName);
+                using (SqlCommand command = new SqlCommand(getProductIdQuery, connection))
+                {
+                    var result = command.ExecuteScalar();
+                    if (result != null)
+                    {
+                        productId = (int)result;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Product {productName} does not exist.");
+                        return;
+                    }
+                }
+            }
+
+            string insertBuyerQuery = $"INSERT INTO Buyers (Name, ProductId) VALUES ('{buyerName}', {productId})";
             using (SqlConnection connection = new(connectionString))
             {
                 connection.Open();
@@ -117,7 +145,7 @@ class Program
                 }
             }
 
-            string insertBuyerQuery = $"INSERT Buyers (Name, ProductId) VALUES ('{buyerName}', {productId})";
+            string insertBuyerQuery = $"INSERT INTO Buyers (Name, ProductId) VALUES ('{buyerName}', {productId})";
             using (SqlConnection connection = new(connectionString))
             {
                 connection.Open();
@@ -134,10 +162,10 @@ class Program
         void QueryProductsAndBuyerCount()
         {
             string query = @"
-                SELECT p.Id,p.Name, COUNT(b.Id) AS BuyerCount
+                SELECT p.Name, COUNT(b.Id) AS BuyerCount
                 FROM Products p
                 LEFT JOIN Buyers b ON p.Id = b.ProductId
-                GROUP BY p.Name,p.Id";
+                GROUP BY p.Name";
 
             using (SqlConnection connection = new(connectionString))
             {
@@ -149,44 +177,19 @@ class Program
                     {
                         while (reader.Read())
                         {
-                            int productId = (int)reader["Id"];
                             string productName = reader["Name"].ToString();
                             int buyerCount = (int)reader["BuyerCount"];
-                            Console.WriteLine($"Product: {productName} ID: {productId} , Buyer Count: {buyerCount}");
+                            Console.WriteLine($"Product: {productName}, Buyer Count: {buyerCount}");
                         }
                     }
                 }
             }
         }
 
-        void deleteProductById(int id)
-        {
-            string deleteProductQuery = $"DELETE FROM Products WHERE Id = {id}";
-            using (SqlConnection connection = new(connectionString))
-            {
-                connection.Open();
-                connection.ChangeDatabase(databaseName);
-                using (SqlCommand command = new SqlCommand(deleteProductQuery, connection))
-                {
-                    command.ExecuteNonQuery();
-                    Console.WriteLine($"Product with id {id} deleted from {databaseName}!");
-                }
-            }
-        }
-
         // Example usage
-        //InsertProduct();
-        //InsertBuyer();
-        Console.WriteLine("Enter a buyer name that would buy a product.");
-        string buyerName = Console.ReadLine();
-        Console.WriteLine("Now enter a product name that would be bought.");
-        string productName = Console.ReadLine();
-        BuyProduct(buyerName, productName);
+        InsertProduct();
+        InsertBuyer();
+        BuyProduct("John Doe", "Product1");
         QueryProductsAndBuyerCount();
-
-        //Console.WriteLine("Enter a product ID");
-        //int productIdToDelete = int.Parse(Console.ReadLine());
-        //deleteProductById(productIdToDelete);
-        //QueryProductsAndBuyerCount();
     }
 }
