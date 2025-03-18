@@ -174,15 +174,45 @@ class Program
             }
         }
 
-        // Example usage
-        //InsertProduct();
-        //InsertBuyer();
-        Console.WriteLine("Enter a buyer name that would buy a product.");
-        string buyerName = Console.ReadLine();
-        Console.WriteLine("Now enter a product name that would be bought.");
-        string productName = Console.ReadLine();
-        BuyProduct(buyerName, productName);
-        QueryProductsAndBuyerCount();
+        void UpdateBuyerName(int id, string newBuyerName)
+        {
+
+            Console.WriteLine($"Buyer with id {id} is:");
+
+            string selectBuyerQuery = $"SELECT TOP 1 Name FROM Buyers WHERE Id = {id}";
+            string updateBuyerQuery = $"UPDATE Buyers SET Name = '{newBuyerName}' WHERE Id = {id}";
+
+            using SqlConnection connection = new(connectionString);
+            {
+                connection.Open();
+                connection.ChangeDatabase(databaseName);
+                using SqlCommand command = new(selectBuyerQuery, connection);
+                {
+                    var result = command.ExecuteScalar();
+                    if (result != null)
+                    {
+                        Console.WriteLine(result);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Buyer with id {id} does not exist.");
+                        return;
+                    }
+                }
+            }
+        }
+            
+            
+
+            
+            //InsertProduct();
+            //InsertBuyer();
+        //    Console.WriteLine("Enter a buyer name that would buy a product.");
+        //string buyerName = Console.ReadLine();
+        //Console.WriteLine("Now enter a product name that would be bought.");
+        //string productName = Console.ReadLine();
+        //BuyProduct(buyerName, productName);
+        //QueryProductsAndBuyerCount();
 
         //Console.WriteLine("Enter a product ID");
         //int productIdToDelete = int.Parse(Console.ReadLine());
